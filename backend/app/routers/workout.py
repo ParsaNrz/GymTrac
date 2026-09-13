@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select, delete
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_async_session
@@ -31,7 +31,6 @@ async def get_or_create_plan(session: AsyncSession, user: User) -> WorkoutPlan:
         await session.commit()
         await session.refresh(plan)
 
-        # Create the seven empty weekdays
         for day_name in WEEKDAYS:
             day = WorkoutDay(workout_plan_id=plan.id, weekday=day_name)
             session.add(day)
@@ -40,7 +39,7 @@ async def get_or_create_plan(session: AsyncSession, user: User) -> WorkoutPlan:
     return plan
 
 
-def _build_plan_response(session: AsyncSession, plan: WorkoutPlan) -> WorkoutPlanSchema:
+async def _build_plan_response(session: AsyncSession, plan: WorkoutPlan) -> WorkoutPlanSchema:
     days_stmt = select(WorkoutDay).where(WorkoutDay.workout_plan_id == plan.id)
     days_result = await session.execute(days_stmt)
     days = days_result.scalars().all()
@@ -69,6 +68,21 @@ def _build_plan_response(session: AsyncSession, plan: WorkoutPlan) -> WorkoutPla
     )
 
 
+async def _build_day_response(session: AsyncSession, day: WorkoutDay) -> WorkoutDaySchema:
+    ex_stmt = (
+        select(WorkoutDayExercise)
+        .where(WorkoutDayExercise.workout_day_id == day.id)
+        .order_by(WorkoutDayExercise.display_order)
+    )
+    ex_result = await session.execute(ex_stmt)
+    exercises = ex_result.scalars().all()
+    return WorkoutDaySchema(
+        id=day.id,
+        weekday=day.weekday,
+        exercises=[WorkoutDayExerciseSchema.model_validate(e) for e in exercises],
+    )
+
+
 @router.get("/plan", response_model=WorkoutPlanSchema)
 async def get_plan(
     session: AsyncSession = Depends(get_async_session),
@@ -78,15 +92,13 @@ async def get_plan(
     return await _build_plan_response(session, plan)
 
 
-@router.put("/plan", response_model=WorkoutPlanSchema)
-async def replace_plan(
-    session: AsyncSession = Depends(get_async_session),
-    current_user: User = Depends(get_current_user_from_token),
-):
-    # For V1, a full replace is not exposed; the plan is managed per-day.
-    # This endpoint can be used in the future for full plan import/export.
-    plan = await get_or_create_plan(session, current_user)
-    return await _build_plan_response(session, plan)
+async def _get_day(session: AsyncSession, plan: WorkoutPlan, weekday: str) -> WorkoutDaySchema:
+    stmt = select(WorkoutDay).where(WorkoutDay.workout_plan_id == plan.id, WorkoutDay.weekday == weekday)
+    result = await session.execute(stmt)
+    day = result.scalar_one_or_none()
+    if day is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Day not found")
+    return await _build_day_response(session, day)
 
 
 @router.get("/day/{weekday}", response_model=WorkoutDaySchema)
@@ -99,27 +111,7 @@ async def get_day(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid weekday: {weekday}")
 
     plan = await get_or_create_plan(session, current_user)
-
-    stmt = select(WorkoutDay).where(WorkoutDay.workout_plan_id == plan.id, WorkoutDay.weekday == weekday)
-    result = await session.execute(stmt)
-    day = result.scalar_one_or_none()
-
-    if day is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Day not found")
-
-    ex_stmt = (
-        select(WorkoutDayExercise)
-        .where(WorkoutDayExercise.workout_day_id == day.id)
-        .order_by(WorkoutDayExercise.display_order)
-    )
-    ex_result = await session.execute(ex_stmt)
-    exercises = ex_result.scalars().all()
-
-    return WorkoutDaySchema(
-        id=day.id,
-        weekday=day.weekday,
-        exercises=[WorkoutDayExerciseSchema.model_validate(e) for e in exercises],
-    )
+    return await _get_day(session, plan, weekday)
 
 
 @router.post("/day/{weekday}/exercises", response_model=WorkoutDaySchema)
@@ -132,7 +124,6 @@ async def add_exercise_to_day(
     if weekday not in WEEKDAYS:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid weekday: {weekday}")
 
-    # Verify exercise exists
     ex_stmt = select(Exercise).where(Exercise.id == body.exercise_id)
     ex_result = await session.execute(ex_stmt)
     exercise = ex_result.scalar_one_or_none()
@@ -147,7 +138,6 @@ async def add_exercise_to_day(
     if day is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Day not found")
 
-    # Check duplicate
     dup_stmt = select(WorkoutDayExercise).where(
         WorkoutDayExercise.workout_day_id == day.id,
         WorkoutDayExercise.exercise_id == body.exercise_id,
@@ -156,7 +146,6 @@ async def add_exercise_to_day(
     if dup_result.scalar_one_or_none() is not None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Exercise already assigned to this day")
 
-    # Compute next display_order
     order_stmt = select(WorkoutDayExercise).where(WorkoutDayExercise.workout_day_id == day.id)
     order_result = await session.execute(order_stmt)
     existing = order_result.scalars().all()
@@ -171,7 +160,7 @@ async def add_exercise_to_day(
     await session.commit()
     await session.refresh(assignment)
 
-    return await get_day(session, weekday, current_user)
+    return await _get_day(session, plan, weekday)
 
 
 @router.delete("/day/{weekday}/exercises/{exercise_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -238,4 +227,4 @@ async def reorder_day_exercises(
             entry.display_order = new_order
 
     await session.commit()
-    return await get_day(session, weekday, current_user)
+    return await _get_day(session, plan, weekday)

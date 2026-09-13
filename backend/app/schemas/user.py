@@ -1,7 +1,9 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class UserUpdate(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     username: str | None = Field(None, min_length=3, max_length=50)
     age: int | None = Field(None, ge=1, le=150)
     height: int | None = Field(None, ge=50, le=300)

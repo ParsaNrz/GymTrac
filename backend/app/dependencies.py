@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Header
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,24 +9,31 @@ from app.models.user import User
 from app.services.auth_service import decode_access_token
 
 
-async def get_current_user(
+async def get_current_user_from_token(
+    authorization: Annotated[str | None, Header(description="Bearer token")] = None,
     session: AsyncSession = Depends(get_async_session),
 ) -> User:
-    """Dependency that extracts and validates the JWT from the Authorization header.
+    """Extract and validate the JWT from the Authorization header.
 
+    Expects the header value to be "Bearer <token>".
     Returns the User model instance. Raises 401 if the token is missing,
     expired, invalid, or the user no longer exists.
     """
-    # The token is expected to be passed via the Authorization header by the
-    # router dependencies. This function is a building block; routers should
-    # call it after extracting the token string.
-    pass
+    if authorization is None or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or malformed authorization header",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
+    token = authorization.removeprefix("Bearer ").strip()
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
-async def get_current_user_from_token(
-    token: str,
-    session: AsyncSession = Depends(get_async_session),
-) -> User:
     payload = decode_access_token(token)
     if payload is None:
         raise HTTPException(
@@ -61,9 +68,6 @@ def require_role(required_role: str):
     """Returns a dependency that checks the current user has the required role."""
 
     async def role_checker(current_user: User = Depends(get_current_user_from_token)) -> User:
-        # Note: the token is extracted upstream; we receive the user directly.
-        # This function is used as: Depends(require_role("admin"))(get_current_user_from_token)
-        # See routers for the actual wiring.
         if current_user.role != required_role:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

@@ -1,25 +1,36 @@
+"""Authentication service: password hashing and JWT handling.
+
+Uses bcrypt directly (not passlib) to avoid passlib/bcrypt 5.x
+compatibility issues.
+"""
+
 from datetime import datetime, timedelta, UTC
 from typing import Any
 
+import bcrypt
 import jwt
-from jwt import PyJWTError
-from passlib.context import CryptContext
 
 from app.config import settings
 
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+BCRYPT_ROUNDS = 12
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    """Hash a password with bcrypt. Returns the hash as a string."""
+    pw_bytes = password.encode("utf-8")
+    hashed = bcrypt.hashpw(pw_bytes, bcrypt.gensalt(rounds=BCRYPT_ROUNDS))
+    return hashed.decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    """Verify a plain password against a bcrypt hash."""
+    pw_bytes = plain_password.encode("utf-8")
+    hash_bytes = hashed_password.encode("utf-8")
+    return bcrypt.checkpw(pw_bytes, hash_bytes)
 
 
 def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str:
+    """Create a JWT access token."""
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(UTC) + expires_delta
@@ -31,8 +42,9 @@ def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = 
 
 
 def decode_access_token(token: str) -> dict[str, Any] | None:
+    """Decode and validate a JWT access token. Returns payload or None."""
     try:
         payload = jwt.decode(token, settings.jwt_secret_key, algorithms=["HS256"])
         return payload
-    except PyJWTError:
+    except jwt.PyJWTError:
         return None

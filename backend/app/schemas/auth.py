@@ -1,4 +1,5 @@
-from pydantic import BaseModel, Field
+from datetime import datetime
+from pydantic import BaseModel, Field, ConfigDict, field_serializer
 
 
 class RegisterRequest(BaseModel):
@@ -20,13 +21,21 @@ class TokenResponse(BaseModel):
 
 
 class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     username: str
     age: int | None = None
     height: int | None = None
     weight: int | None = None
     role: str
-    created_at: str | None = None
+    created_at: datetime | None = None
+
+    @field_serializer("created_at")
+    def serialize_created_at(self, value: datetime | None, _info) -> str | None:
+        if value is None:
+            return None
+        return value.isoformat()
 
 
 class AuthResponse(TokenResponse):

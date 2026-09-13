@@ -24,7 +24,7 @@ app = FastAPI(title="GymTrac API", lifespan=lifespan)
 # CORS: allow the Vite dev server (frontend)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_ORIGIN],
+    allow_origins=[settings.frontend_origin],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

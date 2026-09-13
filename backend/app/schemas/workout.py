@@ -1,32 +1,29 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List
 
 
 class WorkoutDayExerciseSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     exercise_id: int
     display_order: int
 
-    class Config:
-        from_attributes = True
-
 
 class WorkoutDaySchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     weekday: str
     exercises: List[WorkoutDayExerciseSchema] = []
 
-    class Config:
-        from_attributes = True
-
 
 class WorkoutPlanSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     user_id: int
     days: List[WorkoutDaySchema] = []
-
-    class Config:
-        from_attributes = True
 
 
 class AddExerciseToDay(BaseModel):
