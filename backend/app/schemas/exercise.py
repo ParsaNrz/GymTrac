@@ -1,5 +1,11 @@
-from pydantic import BaseModel, Field
+from datetime import datetime
+from pydantic import BaseModel, Field, field_serializer, field_validator
 from typing import Optional
+
+VALID_MUSCLE_GROUPS = [
+    "Chest", "Back", "Shoulders", "Biceps", "Triceps",
+    "Legs", "Glutes", "Calves", "Abs", "Forearms",
+]
 
 
 class ExerciseSchema(BaseModel):
@@ -10,8 +16,22 @@ class ExerciseSchema(BaseModel):
     description: str | None = None
     created_at: str | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
+
+    @field_validator("created_at", mode="before")
+    @classmethod
+    def convert_created_at(cls, value):
+        if isinstance(value, datetime):
+            return value.isoformat()
+        return value
+
+    @field_serializer("created_at")
+    def serialize_created_at(self, value: datetime | str | None, _info) -> str | None:
+        if value is None:
+            return None
+        if isinstance(value, datetime):
+            return value.isoformat()
+        return str(value)
 
 
 class CreateExerciseRequest(BaseModel):
