@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import engine, Base
-from app.routers import auth, users, workout, exercises, admin
+from app.routers import auth, users, workout, exercises, admin, dashboard
 from app.services.seed import seed_admin
 
 
@@ -35,7 +35,7 @@ app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(workout.router)
 app.include_router(exercises.router)
-app.include_router(admin.router)
+app.include_router(dashboard.router)
 
 
 @app.get("/health")

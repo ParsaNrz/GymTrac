@@ -187,3 +187,171 @@ input, select, textarea {
   color: var(--success);
   border: 1px solid var(--success);
 }
+
+/* Dashboard */
+.dashboard {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  padding-top: 1.5rem;
+}
+
+.dashboard-greeting {
+  text-align: center;
+}
+
+.dashboard-greeting h1 {
+  font-size: 1.8rem;
+  margin-bottom: 0.25rem;
+}
+
+.greeting-date {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.dashboard-profile .profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.profile-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.profile-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.profile-value {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.dashboard-summary .summary-stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.summary-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 100px;
+}
+
+.summary-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1.2;
+}
+
+.summary-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+.summary-empty {
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+}
+
+.dashboard-today h2 {
+  margin-bottom: 1rem;
+}
+
+.rest-day-message {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.rest-day-icon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.rest-day-message h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.rest-day-message p {
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.today-exercises h3 {
+  margin-bottom: 0.75rem;
+}
+
+.exercise-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0;
+}
+
+.exercise-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.exercise-item:last-child {
+  border-bottom: none;
+}
+
+.exercise-name {
+  font-weight: 500;
+  flex: 1;
+  min-width: 120px;
+}
+
+.exercise-meta {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+}
+
+.exercise-notes {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+  flex-basis: 100%;
+  margin-top: 0.15rem;
+}
+
+@media (max-width: 600px) {
+  .dashboard-summary .summary-stats {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .summary-stat {
+    flex-direction: row;
+    justify-content: space-between;
+    min-width: unset;
+  }
+
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+}

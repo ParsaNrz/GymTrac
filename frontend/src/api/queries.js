@@ -28,6 +28,11 @@ export const workoutQueries = {
     api.put(`/api/workout/day/${encodeURIComponent(weekday)}/order`, { exercises }),
 };
 
+// Dashboard
+export const dashboardQueries = {
+  getDashboard: () => api.get('/api/dashboard'),
+};
+
 // Exercises
 export const exerciseQueries = {
   list: (params = {}) => api.get('/api/exercises', { params }),
