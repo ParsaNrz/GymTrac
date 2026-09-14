@@ -355,3 +355,154 @@ input, select, textarea {
     grid-template-columns: 1fr;
   }
 }
+
+/* Calendar */
+.calendar-page {
+  padding-top: 1.5rem;
+}
+
+.calendar-subtitle {
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+}
+
+.calendar-week-card {
+  margin-bottom: 1.5rem;
+}
+
+.calendar-week-card h2 {
+  margin-bottom: 1rem;
+  font-size: 1.3rem;
+}
+
+.calendar-week-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.calendar-week-day {
+  padding: 1rem;
+  min-height: 120px;
+  transition: box-shadow 0.2s;
+}
+
+.calendar-week-day.has-workout {
+  border-left: 3px solid var(--accent);
+}
+
+.calendar-weekday-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.weekday-name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.weekday-badge {
+  background-color: var(--accent);
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.calendar-day-exercises {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.calendar-exercise-item {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.calendar-exercise-item:last-child {
+  border-bottom: none;
+}
+
+.calendar-exercise-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.calendar-exercise-name {
+  font-weight: 500;
+  font-size: 0.95rem;
+  flex: 1;
+  min-width: 120px;
+}
+
+.calendar-exercise-meta {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+.calendar-exercise-equipment {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.calendar-exercise-notes {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 0.25rem;
+}
+
+.calendar-rest-day {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.calendar-legend {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.legend-dot.has-workout-dot {
+  background-color: var(--accent);
+}
+
+.legend-dot.rest-day-dot {
+  background-color: var(--border);
+}
+
+@media (max-width: 600px) {
+  .calendar-week-grid {
+    grid-template-columns: 1fr;
+  }
+}

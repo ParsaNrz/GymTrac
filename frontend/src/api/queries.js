@@ -33,6 +33,11 @@ export const dashboardQueries = {
   getDashboard: () => api.get('/api/dashboard'),
 };
 
+// Calendar
+export const calendarQueries = {
+  getCalendar: () => api.get('/api/calendar/'),
+};
+
 // Exercises
 export const exerciseQueries = {
   list: (params = {}) => api.get('/api/exercises', { params }),

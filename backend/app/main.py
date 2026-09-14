@@ -6,7 +6,7 @@ from sqlalchemy import text
 
 from app.config import settings
 from app.database import engine, Base
-from app.routers import auth, users, workout, exercises, admin, dashboard
+from app.routers import auth, users, workout, exercises, admin, dashboard, calendar
 from app.services.seed import seed_admin
 from app.services.seed_exercises import seed_exercises
 
@@ -64,6 +64,7 @@ app.include_router(users.router)
 app.include_router(workout.router)
 app.include_router(exercises.router)
 app.include_router(dashboard.router)
+app.include_router(calendar.router)
 
 
 @app.get("/health")
