@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict
-from typing import List
+from typing import List, Optional
 
 
 class WorkoutDayExerciseSchema(BaseModel):
@@ -8,6 +8,9 @@ class WorkoutDayExerciseSchema(BaseModel):
     id: int
     exercise_id: int
     display_order: int
+    sets: Optional[int] = None
+    reps: Optional[int] = None
+    notes: Optional[str] = None
 
 
 class WorkoutDaySchema(BaseModel):
@@ -28,6 +31,12 @@ class WorkoutPlanSchema(BaseModel):
 
 class AddExerciseToDay(BaseModel):
     exercise_id: int = Field(..., gt=0)
+
+
+class UpdateExerciseDetails(BaseModel):
+    sets: Optional[int] = Field(None, ge=1, le=100)
+    reps: Optional[int] = Field(None, ge=1, le=1000)
+    notes: Optional[str] = Field(None, max_length=500)
 
 
 class ReorderRequest(BaseModel):

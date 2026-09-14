@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, UniqueConstraint, Text
 from sqlalchemy.sql import func
 
 from app.database import Base
@@ -32,3 +32,6 @@ class WorkoutDayExercise(Base):
     workout_day_id = Column(Integer, ForeignKey("workout_days.id"), nullable=False)
     exercise_id = Column(Integer, ForeignKey("exercises.id"), nullable=False)
     display_order = Column(Integer, nullable=False, default=0)
+    sets = Column(Integer, nullable=True)
+    reps = Column(Integer, nullable=True)
+    notes = Column(Text, nullable=True)

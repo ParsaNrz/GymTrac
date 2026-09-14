@@ -11,6 +11,7 @@ from app.schemas.workout import (
     WorkoutDaySchema,
     WorkoutDayExerciseSchema,
     AddExerciseToDay,
+    UpdateExerciseDetails,
     ReorderRequest,
 )
 from app.dependencies import get_current_user_from_token
@@ -83,15 +84,6 @@ async def _build_day_response(session: AsyncSession, day: WorkoutDay) -> Workout
     )
 
 
-@router.get("/plan", response_model=WorkoutPlanSchema)
-async def get_plan(
-    session: AsyncSession = Depends(get_async_session),
-    current_user: User = Depends(get_current_user_from_token),
-):
-    plan = await get_or_create_plan(session, current_user)
-    return await _build_plan_response(session, plan)
-
-
 async def _get_day(session: AsyncSession, plan: WorkoutPlan, weekday: str) -> WorkoutDaySchema:
     stmt = select(WorkoutDay).where(WorkoutDay.workout_plan_id == plan.id, WorkoutDay.weekday == weekday)
     result = await session.execute(stmt)
@@ -99,6 +91,15 @@ async def _get_day(session: AsyncSession, plan: WorkoutPlan, weekday: str) -> Wo
     if day is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Day not found")
     return await _build_day_response(session, day)
+
+
+@router.get("/plan", response_model=WorkoutPlanSchema)
+async def get_plan(
+    session: AsyncSession = Depends(get_async_session),
+    current_user: User = Depends(get_current_user_from_token),
+):
+    plan = await get_or_create_plan(session, current_user)
+    return await _build_plan_response(session, plan)
 
 
 @router.get("/day/{weekday}", response_model=WorkoutDaySchema)
@@ -163,10 +164,49 @@ async def add_exercise_to_day(
     return await _get_day(session, plan, weekday)
 
 
-@router.delete("/day/{weekday}/exercises/{exercise_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.put("/day/{weekday}/exercises/{exercise_assignment_id}", response_model=WorkoutDaySchema)
+async def update_exercise_details(
+    weekday: str,
+    exercise_assignment_id: int,
+    body: UpdateExerciseDetails,
+    session: AsyncSession = Depends(get_async_session),
+    current_user: User = Depends(get_current_user_from_token),
+):
+    """Update sets, reps, or notes for an exercise assignment on a workout day."""
+    if weekday not in WEEKDAYS:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid weekday: {weekday}")
+
+    plan = await get_or_create_plan(session, current_user)
+
+    day_stmt = select(WorkoutDay).where(WorkoutDay.workout_plan_id == plan.id, WorkoutDay.weekday == weekday)
+    day_result = await session.execute(day_stmt)
+    day = day_result.scalar_one_or_none()
+    if day is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Day not found")
+
+    assignment_stmt = select(WorkoutDayExercise).where(
+        WorkoutDayExercise.id == exercise_assignment_id,
+        WorkoutDayExercise.workout_day_id == day.id,
+    )
+    assignment_result = await session.execute(assignment_stmt)
+    assignment = assignment_result.scalar_one_or_none()
+    if assignment is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise assignment not found")
+
+    update_data = body.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(assignment, field, value)
+
+    await session.commit()
+    await session.refresh(assignment)
+
+    return await _get_day(session, plan, weekday)
+
+
+@router.delete("/day/{weekday}/exercises/{exercise_assignment_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_exercise_from_day(
     weekday: str,
-    exercise_id: int,
+    exercise_assignment_id: int,
     session: AsyncSession = Depends(get_async_session),
     current_user: User = Depends(get_current_user_from_token),
 ):
@@ -182,13 +222,13 @@ async def remove_exercise_from_day(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Day not found")
 
     del_stmt = select(WorkoutDayExercise).where(
+        WorkoutDayExercise.id == exercise_assignment_id,
         WorkoutDayExercise.workout_day_id == day.id,
-        WorkoutDayExercise.exercise_id == exercise_id,
     )
     del_result = await session.execute(del_stmt)
     assignment = del_result.scalar_one_or_none()
     if assignment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found on this day")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise assignment not found")
 
     await session.delete(assignment)
     await session.commit()

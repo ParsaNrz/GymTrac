@@ -17,6 +17,11 @@ export default function WorkoutPage() {
   const [addingExercise, setAddingExercise] = useState(null);
   const [addSearch, setAddSearch] = useState('');
   const [filterGroup, setFilterGroup] = useState('');
+  const [editingAssignment, setEditingAssignment] = useState(null);
+  const [editSets, setEditSets] = useState('');
+  const [editReps, setEditReps] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -50,15 +55,41 @@ export default function WorkoutPage() {
     }
   };
 
-  const handleRemoveExercise = async (weekday, exerciseId) => {
+  const handleRemoveExercise = async (weekday, assignmentId) => {
     try {
-      await workoutQueries.removeExercise(weekday, exerciseId);
-      // Refresh plan
+      await workoutQueries.removeExercise(weekday, assignmentId);
       const res = await workoutQueries.getPlan();
       setPlan(res.data);
     } catch (err) {
       const msg = err.response?.data?.detail || 'Failed to remove exercise';
       setError(msg);
+    }
+  };
+
+  const startEdit = (assignment, weekday) => {
+    setEditingAssignment({ assignment, weekday });
+    setEditSets(assignment.sets !== null && assignment.sets !== undefined ? assignment.sets : '');
+    setEditReps(assignment.reps !== null && assignment.reps !== undefined ? assignment.reps : '');
+    setEditNotes(assignment.notes || '');
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingAssignment) return;
+    const { assignment, weekday } = editingAssignment;
+    setSavingEdit(true);
+    try {
+      const data = {};
+      if (editSets !== '') data.sets = parseInt(editSets, 10);
+      if (editReps !== '') data.reps = parseInt(editReps, 10);
+      if (editNotes !== '') data.notes = editNotes;
+      const res = await workoutQueries.updateExercise(weekday, assignment.id, data);
+      setPlan(res.data);
+      setEditingAssignment(null);
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'Failed to update exercise';
+      setError(msg);
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -109,20 +140,84 @@ export default function WorkoutPage() {
                         <ul className="day-exercise-list">
                           {dayExercises.map(ex => {
                             const exercise = exercises.find(e => e.id === ex.exercise_id);
+                            const isEditing = editingAssignment?.assignment?.id === ex.id;
                             return (
                               <li key={ex.id} className="day-exercise-item">
-                                <span className="day-exercise-name">
-                                  {exercise ? exercise.name : `Exercise #${ex.exercise_id}`}
-                                </span>
-                                <span className="day-exercise-muscle">
-                                  {exercise ? exercise.primary_muscle_group : ''}
-                                </span>
-                                <button
-                                  className="btn btn-danger btn-sm"
-                                  onClick={() => handleRemoveExercise(day, ex.exercise_id)}
-                                >
-                                  Remove
-                                </button>
+                                <div className="exercise-header">
+                                  <span className="day-exercise-name">
+                                    {exercise ? exercise.name : `Exercise #${ex.exercise_id}`}
+                                  </span>
+                                  {isEditing ? (
+                                    <div className="edit-form">
+                                      <input
+                                        className="form-input form-input-sm"
+                                        type="number"
+                                        placeholder="Sets"
+                                        value={editSets}
+                                        onChange={e => setEditSets(e.target.value)}
+                                        min={1}
+                                        max={100}
+                                      />
+                                      <input
+                                        className="form-input form-input-sm"
+                                        type="number"
+                                        placeholder="Reps"
+                                        value={editReps}
+                                        onChange={e => setEditReps(e.target.value)}
+                                        min={1}
+                                        max={1000}
+                                      />
+                                      <input
+                                        className="form-input form-input-sm"
+                                        type="text"
+                                        placeholder="Notes"
+                                        value={editNotes}
+                                        onChange={e => setEditNotes(e.target.value)}
+                                        maxLength={500}
+                                      />
+                                      <button
+                                        className="btn btn-primary btn-sm"
+                                        onClick={handleSaveEdit}
+                                        disabled={savingEdit}
+                                      >
+                                        {savingEdit ? 'Saving...' : 'Save'}
+                                      </button>
+                                      <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={() => setEditingAssignment(null)}
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="exercise-meta">
+                                      {ex.sets && ex.reps && (
+                                        <span className="exercise-sets-reps">
+                                          {ex.sets} × {ex.reps}
+                                        </span>
+                                      )}
+                                      {ex.notes && (
+                                        <span className="exercise-notes">{ex.notes}</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                                {!isEditing && (
+                                  <div className="exercise-actions">
+                                    <button
+                                      className="btn btn-secondary btn-sm"
+                                      onClick={() => startEdit(ex, day)}
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      className="btn btn-danger btn-sm"
+                                      onClick={() => handleRemoveExercise(day, ex.id)}
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                )}
                               </li>
                             );
                           })}

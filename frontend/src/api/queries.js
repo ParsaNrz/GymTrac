@@ -20,8 +20,10 @@ export const workoutQueries = {
   getDay: (weekday) => api.get(`/api/workout/day/${encodeURIComponent(weekday)}`),
   addExercise: (weekday, exerciseId) =>
     api.post(`/api/workout/day/${encodeURIComponent(weekday)}/exercises`, { exercise_id: exerciseId }),
-  removeExercise: (weekday, exerciseId) =>
-    api.delete(`/api/workout/day/${encodeURIComponent(weekday)}/exercises/${exerciseId}`),
+  updateExercise: (weekday, assignmentId, data) =>
+    api.put(`/api/workout/day/${encodeURIComponent(weekday)}/exercises/${assignmentId}`, data),
+  removeExercise: (weekday, assignmentId) =>
+    api.delete(`/api/workout/day/${encodeURIComponent(weekday)}/exercises/${assignmentId}`),
   reorder: (weekday, exercises) =>
     api.put(`/api/workout/day/${encodeURIComponent(weekday)}/order`, { exercises }),
 };
