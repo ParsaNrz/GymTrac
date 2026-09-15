@@ -12,6 +12,7 @@ export const authQueries = {
 export const userQueries = {
   getMe: () => api.get('/api/users/me'),
   updateMe: (data) => api.put('/api/users/me', data),
+  changePassword: (data) => api.post('/api/users/change-password', data),
 };
 
 // Workout
@@ -52,7 +53,7 @@ export const exerciseQueries = {
 export const adminQueries = {
   listUsers: (params = {}) => api.get('/api/admin/users', { params }),
   getUser: (id) => api.get(`/api/admin/users/${id}`),
-  changeRole: (id, role) => api.put(`/api/admin/users/${id}/role`, { role }),
+  changeRole: (id, role) => api.put(`/api/admin/users/${id}/role`, null, { params: { role } }),
   deleteUser: (id) => api.delete(`/api/admin/users/${id}`),
   listExercises: (params = {}) => api.get('/api/admin/exercises', { params }),
   createExercise: (data) => api.post('/api/admin/exercises', data),

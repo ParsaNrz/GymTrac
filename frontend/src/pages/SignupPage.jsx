@@ -27,7 +27,6 @@ export default function SignupPage() {
         weight: weight ? parseInt(weight, 10) : null,
       });
       setSuccess(true);
-      navigate('/login', { state: { message: 'Account created. Please log in.' } });
     } catch (err) {
       const msg = err.response?.data?.detail || 'Signup failed';
       setError(msg);

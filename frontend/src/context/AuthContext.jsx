@@ -42,11 +42,7 @@ export function AuthProvider({ children }) {
 
   const signup = async (data) => {
     const res = await api.post('/api/auth/register', data);
-    const { access_token, user: userData } = res.data;
-    localStorage.setItem('gymtrac_token', access_token);
-    setToken(access_token);
-    setUser(userData);
-    api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+    const { user: userData } = res.data;
     return userData;
   };
 

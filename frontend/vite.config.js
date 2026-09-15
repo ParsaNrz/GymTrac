@@ -7,4 +7,10 @@ export default defineConfig({
     port: 5173,
     host: '127.0.0.1',
   },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.js',
+    exclude: ['tests/e2e/**', 'node_modules/**'],
+  },
 });

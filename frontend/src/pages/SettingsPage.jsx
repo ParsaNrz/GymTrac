@@ -9,11 +9,13 @@ export default function SettingsPage() {
     age: user?.age ?? '',
     height: user?.height ?? '',
     weight: user?.weight ?? '',
-    password: '',
-    confirm_password: '',
   });
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -31,39 +33,63 @@ export default function SettingsPage() {
     if (form.username && form.username !== user?.username) {
       updateData.username = form.username;
     }
-    if (form.age !== '' && form.age !== user?.age) {
+    if (form.age !== '' && String(form.age) !== String(user?.age ?? '')) {
       updateData.age = parseInt(form.age, 10);
     }
-    if (form.height !== '' && form.height !== user?.height) {
+    if (form.height !== '' && String(form.height) !== String(user?.height ?? '')) {
       updateData.height = parseInt(form.height, 10);
     }
-    if (form.weight !== '' && form.weight !== user?.weight) {
+    if (form.weight !== '' && String(form.weight) !== String(user?.weight ?? '')) {
       updateData.weight = parseInt(form.weight, 10);
-    }
-    if (form.password) {
-      if (form.password !== form.confirm_password) {
-        setError('Passwords do not match.');
-        setSaving(false);
-        return;
-      }
-      if (form.password.length < 6) {
-        setError('Password must be at least 6 characters.');
-        setSaving(false);
-        return;
-      }
-      updateData.password = form.password;
     }
 
     try {
       await userQueries.updateMe(updateData);
       setSuccess('Profile updated successfully.');
-      // Clear password fields
-      setForm({ ...form, password: '', confirm_password: '' });
+      // Refresh user data from context
+      const res = await userQueries.getMe();
+      // Note: parent component manages user state; we rely on the success message
     } catch (err) {
       const msg = err.response?.data?.detail || 'Update failed.';
       setError(msg);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    if (!currentPassword) {
+      setError('Please enter your current password.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError('New passwords do not match.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setError('New password must be at least 6 characters.');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      await userQueries.changePassword({ current_password: currentPassword, new_password: newPassword });
+      setSuccess('Password changed successfully. Please log in with your new password.');
+      // Clear password fields
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      // Trigger logout so user must re-login with new password
+      setTimeout(() => { logout(); }, 1500);
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'Password change failed.';
+      setError(msg);
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -89,6 +115,7 @@ export default function SettingsPage() {
               minLength={3}
               maxLength={50}
             />
+            <p className="form-hint">Your unique username. Can be changed once.</p>
           </div>
 
           <div className="form-group">
@@ -133,34 +160,60 @@ export default function SettingsPage() {
             />
           </div>
 
-          <h3>Change Password</h3>
-          <div className="form-group">
-            <label className="form-label" htmlFor="settings-password">New Password</label>
-            <input
-              id="settings-password"
-              className="form-input"
-              type="password"
-              value={form.password}
-              onChange={handleChange('password')}
-              placeholder="Leave blank to keep current password"
-              minLength={6}
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="settings-confirm">Confirm New Password</label>
-            <input
-              id="settings-confirm"
-              className="form-input"
-              type="password"
-              value={form.confirm_password}
-              onChange={handleChange('confirm_password')}
-              placeholder="Re-enter new password"
-            />
-          </div>
-
           <button className="btn btn-primary" type="submit" disabled={saving}>
-            {saving ? 'Saving...' : 'Save Changes'}
+            {saving ? 'Saving...' : 'Save Profile Changes'}
+          </button>
+        </form>
+      </div>
+
+      <div className="settings-section card">
+        <h2>Change Password</h2>
+        <form onSubmit={handleChangePassword}>
+          {error && <div className="alert alert-error">{error}</div>}
+          {success && <div className="alert alert-success">{success}</div>}
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="settings-current-password">Current Password</label>
+            <input
+              id="settings-current-password"
+              className="form-input"
+              type="password"
+              value={currentPassword}
+              onChange={e => setCurrentPassword(e.target.value)}
+              placeholder="Enter current password"
+              autoComplete="current-password"
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="settings-new-password">New Password</label>
+            <input
+              id="settings-new-password"
+              className="form-input"
+              type="password"
+              value={newPassword}
+              onChange={e => setNewPassword(e.target.value)}
+              placeholder="Enter new password (min 6 characters)"
+              minLength={6}
+              autoComplete="new-password"
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="settings-confirm-password">Confirm New Password</label>
+            <input
+              id="settings-confirm-password"
+              className="form-input"
+              type="password"
+              value={confirmPassword}
+              onChange={e => setConfirmPassword(e.target.value)}
+              placeholder="Re-enter new password"
+              autoComplete="new-password"
+            />
+          </div>
+
+          <button className="btn btn-primary" type="submit" disabled={changingPassword}>
+            {changingPassword ? 'Changing...' : 'Change Password'}
           </button>
         </form>
       </div>

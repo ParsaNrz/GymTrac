@@ -65,6 +65,7 @@ app.include_router(workout.router)
 app.include_router(exercises.router)
 app.include_router(dashboard.router)
 app.include_router(calendar.router)
+app.include_router(admin.router)
 
 
 @app.get("/health")

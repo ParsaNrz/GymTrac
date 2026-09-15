@@ -28,6 +28,10 @@ env/
 .coverage
 htmlcov/
 
+# E2E Testing
+frontend/test-results/
+frontend/playwright-report/
+
 # Node
 node_modules/
 dist/
